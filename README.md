@@ -30,7 +30,7 @@ Android 和 iOS 原生工程由 Expo CNG / prebuild 生成，不在 ZIP 中预�
 
 1. `Typecheck and unit tests`：npm ci、SDK 兼容检查、配置检查、类型检查、7 个单元测试。
 2. `Android APK and device tests`：Linux，生成原生工程，编译 Release APK，API 34 模拟器，Maestro 测试。
-3. `iOS app and device tests`：macOS 15，生成工程，CocoaPods，Xcode Release Simulator 构建，Maestro 测试。
+3. `iOS app and device tests`：macOS 15，生成工程，CocoaPods，Xcode Release Simulator 构建（仅 arm64，供 Apple Silicon 模拟器使用），Maestro 测试。
 4. `Acceptance gate`：只有前三个任务全部成功才通过。失败、跳过、取消都不通过。
 
 Release 构建内置 JavaScript，无需常驻 Metro 开发服务器。Android APK 使用 Expo 模板的调试签名，只用于演示；iOS `.app` 是 Simulator 版本，不可安装到 iPhone 真机。
@@ -41,7 +41,9 @@ Release 构建内置 JavaScript，无需常驻 Metro 开发服务器。Android A
 | --- | --- |
 | `quality-evidence` | 类型、配置、兼容检查、单元测试日志 |
 | `android-evidence` | `go-demo.apk`、JUnit、Maestro 日志/截图、设备日志 |
-| `ios-evidence` | `ios-simulator-app.zip`、JUnit、Maestro 日志/截图、Xcode/Pods 日志 |
+| `ios-evidence` | `ios-simulator-app.zip`、`app-architecture.txt`、JUnit、Maestro 日志/截图、Xcode/Pods 日志 |
+
+iOS 模拟器 App 只包含 arm64，减少双架构重复编译。构建后检查主程序架构，结果写入 `app-architecture.txt`；不符合时验收失败。下载包适用于 Apple Silicon Mac 的兼容 iOS 模拟器，不支持 Intel Mac，也不能直接安装到真实 iPhone。iPhone 虽然同样使用 ARM 架构，但真机与模拟器属于不同构建目标，后续需要单独构建并签名真机版本。
 
 Android APK 包含 x86_64（模拟器）和 arm64-v8a（多数现代 Android 手机），不包含 32 位 ARM。Artifacts 保留 14 天。失败时保存已有证据，工具安装、编译或设备启动早期失败可能没有完整截图或报告。
 

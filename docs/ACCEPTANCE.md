@@ -61,7 +61,7 @@ git push
 | SDK 和类型 | expo install --check、配置校验、TypeScript 全部成功 |
 | 业务逻辑 | 7 个 Node 单元测试成功 |
 | Android 构建 | 独立 APK 生成并安装到模拟器 |
-| iOS 构建 | 独立 Simulator App 生成并安装到模拟器 |
+| iOS 构建 | 独立 arm64 Simulator App 生成，`app-architecture.txt` 的 Actual 为 arm64，并安装到模拟器 |
 | 设备流程一 | 详情 → 3 晚 / CNY 1197 → 预订确认 → 取消 → 模拟退款 → 重新开始，恢复 1 晚 |
 | 设备流程二 | 1 晚下限、7 晚上限、对应按钮禁用；减少到 6 晚价格 CNY 2394 |
 | 总验收 | Acceptance gate 为绿，前三项依赖均为 success |
@@ -73,7 +73,7 @@ git push
 在运行 Summary 页面底部 Artifacts 下载 quality-evidence、android-evidence、ios-evidence。
 
 - Android：解压 android-evidence，安装 go-demo.apk 到 arm64 Android 手机。按系统提示允许该下载来源安装，然后手动操作上述流程。
-- iOS：查看云端截图、JUnit 和日志即可验收。交互式试用需要自己的或租用的 Mac + Xcode；解压 ios-simulator-app.zip 得到 GOCloudDemo.app，启动 iPhone Simulator 后执行：
+- iOS：查看云端截图、JUnit 和日志即可验收。交互式试用需要自己的或租用的 Apple Silicon Mac + Xcode（不支持 Intel Mac）；解压 ios-simulator-app.zip 得到 GOCloudDemo.app，启动兼容的 iPhone Simulator 后执行：
 
 ```bash
 xcrun simctl install booted GOCloudDemo.app
