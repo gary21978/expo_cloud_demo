@@ -61,7 +61,7 @@ jobs:
           if-no-files-found: warn
 
   android:
-    name: Android APK and device tests
+    name: Android app
     needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -110,7 +110,7 @@ jobs:
           if-no-files-found: warn
 
   ios:
-    name: iOS app and device tests
+    name: iOS app
     needs: quality
     runs-on: macos-15
     timeout-minutes: 60
