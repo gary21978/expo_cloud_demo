@@ -1,0 +1,31 @@
+{
+  "name": "go-expo-cloud-demo",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.tests.json && node --test tests/*.test.cjs",
+    "prebuild": "expo prebuild --no-install",
+    "check:expo": "expo install --check",
+    "check:config": "node scripts/check-config.cjs"
+  },
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
+  "dependencies": {
+    "expo": "53.0.27",
+    "expo-status-bar": "2.2.3",
+    "expo-system-ui": "5.0.11",
+    "react": "19.0.0",
+    "react-native": "0.79.6",
+    "react-native-safe-area-context": "5.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.14",
+    "typescript": "5.8.3"
+  }
+}

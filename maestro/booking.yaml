@@ -1,0 +1,48 @@
+appId: com.example.goexpoclouddemo
+name: Demo booking and cancellation
+---
+- launchApp:
+    clearState: true
+- assertVisible: Harbour Hotel
+- tapOn:
+    id: view-hotel
+- assertVisible: 'Nights: 1'
+- tapOn:
+    id: plus-night
+- tapOn:
+    id: plus-night
+- assertVisible: 'Nights: 3'
+- assertVisible: 'Total: CNY 1197'
+- scrollUntilVisible:
+    element:
+      id: book-stay
+    direction: DOWN
+- tapOn:
+    id: book-stay
+- assertVisible: Booking confirmed
+- assertVisible: 'Order: DEMO-001'
+- assertVisible: 'Nights: 3'
+- assertVisible: 'Total: CNY 1197'
+- takeScreenshot: booking-confirmed
+- scrollUntilVisible:
+    element:
+      id: cancel-booking
+    direction: DOWN
+- tapOn:
+    id: cancel-booking
+- assertVisible: Booking cancelled
+- assertVisible: Demo refund complete
+- assertNotVisible:
+    id: cancel-booking
+- takeScreenshot: booking-cancelled
+- scrollUntilVisible:
+    element:
+      id: start-again
+    direction: DOWN
+- tapOn:
+    id: start-again
+- assertVisible: Harbour Hotel
+- tapOn:
+    id: view-hotel
+- assertVisible: 'Nights: 1'
+- assertVisible: 'Total: CNY 399'

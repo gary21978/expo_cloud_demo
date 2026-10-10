@@ -1,0 +1,176 @@
+name: Expo cloud acceptance
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: expo-acceptance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: '1'
+  EXPO_NO_TELEMETRY: '1'
+  MAESTRO_CLI_NO_ANALYTICS: '1'
+  MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true'
+  MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'
+
+jobs:
+  quality:
+    name: Typecheck and unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check app and SDK configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/quality
+          node --version > artifacts/quality/node-version.txt
+          npm run check:config 2>&1 | tee artifacts/quality/config.log
+          npm run check:expo 2>&1 | tee artifacts/quality/expo-check.log
+      - name: Typecheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run typecheck 2>&1 | tee artifacts/quality/typecheck.log
+      - name: Business unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test 2>&1 | tee artifacts/quality/tests.log
+      - name: Save quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-evidence
+          path: artifacts/quality/
+          retention-days: 14
+          if-no-files-found: warn
+
+  android:
+    name: Android APK and device tests
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Generate native project and build standalone APK
+        run: bash scripts/build_android.sh
+      - name: Install pinned Maestro CLI
+        run: bash scripts/install_maestro.sh
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android device acceptance
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/android_acceptance.sh
+      - name: Save Android app and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-evidence
+          path: artifacts/android/
+          retention-days: 14
+          if-no-files-found: warn
+
+  ios:
+    name: iOS app and device tests
+    needs: quality
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install locked dependencies and record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          mkdir -p artifacts/ios
+          xcodebuild -version > artifacts/ios/xcode-version.txt
+          pod --version > artifacts/ios/pod-version.txt
+          xcrun simctl list devices available > artifacts/ios/available-devices.txt
+      - name: Generate native project and build standalone Simulator app
+        run: bash scripts/build_ios.sh
+      - name: Install pinned Maestro CLI
+        run: bash scripts/install_maestro.sh
+      - name: iOS device acceptance
+        run: bash scripts/ios_acceptance.sh
+      - name: Save iOS app and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-evidence
+          path: artifacts/ios/
+          retention-days: 14
+          if-no-files-found: warn
+
+  acceptance:
+    name: Acceptance gate
+    if: always()
+    needs: [quality, android, ios]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Report required results
+        env:
+          QUALITY: ${{ needs.quality.result }}
+          ANDROID: ${{ needs.android.result }}
+          IOS: ${{ needs.ios.result }}
+        shell: bash
+        run: |
+          {
+            echo '## GO Expo demo acceptance'
+            echo '| Required check | Result |'
+            echo '| --- | --- |'
+            echo "| Typecheck and unit tests | $QUALITY |"
+            echo "| Android APK and Maestro flows | $ANDROID |"
+            echo "| iOS Simulator app and Maestro flows | $IOS |"
+            echo ''
+            echo 'Artifacts: quality-evidence, android-evidence, ios-evidence.'
+            echo 'Demo bookings are local in-memory examples, with no payment or supplier API.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          [[ "$QUALITY" == success && "$ANDROID" == success && "$IOS" == success ]]

@@ -1,0 +1,25 @@
+appId: com.example.goexpoclouddemo
+name: One to seven night boundaries
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: view-hotel
+- assertVisible:
+    id: minus-night
+    enabled: false
+- repeat:
+    times: 6
+    commands:
+      - tapOn:
+          id: plus-night
+- assertVisible: 'Nights: 7'
+- assertVisible: 'Total: CNY 2793'
+- assertVisible:
+    id: plus-night
+    enabled: false
+- tapOn:
+    id: minus-night
+- assertVisible: 'Nights: 6'
+- assertVisible: 'Total: CNY 2394'
+- takeScreenshot: night-boundary

@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "GO Cloud Demo",
+    "slug": "go-expo-cloud-demo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "go-cloud-demo",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.example.goexpoclouddemo"
+    },
+    "android": {
+      "package": "com.example.goexpoclouddemo",
+      "edgeToEdgeEnabled": true
+    },
+    "icon": "./assets/icon.png"
+  }
+}
